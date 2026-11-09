@@ -86,3 +86,26 @@ func TestGetConfigPaths(t *testing.T) {
 	test.IsEqualString(t, configFile, "test2")
 	test.IsEqualString(t, awsConfig, "test/cloudconfig.yml")
 }
+
+func TestUploadDefaults(t *testing.T) {
+	env := New()
+	test.IsEqualInt(t, env.DefaultDownloads, 1)
+	test.IsEqualInt(t, env.DefaultExpiryDays, 14)
+	test.IsEqualBool(t, env.DefaultPasswordEnabled, false)
+	test.IsEqualBool(t, env.IsDefaultDownloadsSet, false)
+	test.IsEqualBool(t, env.IsDefaultExpirySet, false)
+
+	t.Setenv("GOKAPI_DEFAULT_DOWNLOADS", "0")
+	t.Setenv("GOKAPI_DEFAULT_EXPIRY_DAYS", "7")
+	t.Setenv("GOKAPI_DEFAULT_PASSWORD", "true")
+	env = New()
+	test.IsEqualInt(t, env.DefaultDownloads, 0)
+	test.IsEqualInt(t, env.DefaultExpiryDays, 7)
+	test.IsEqualBool(t, env.DefaultPasswordEnabled, true)
+	test.IsEqualBool(t, env.IsDefaultDownloadsSet, true)
+	test.IsEqualBool(t, env.IsDefaultExpirySet, true)
+
+	t.Setenv("GOKAPI_DEFAULT_DOWNLOADS", "-3")
+	env = New()
+	test.IsEqualInt(t, env.DefaultDownloads, 1)
+}

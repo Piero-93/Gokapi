@@ -204,7 +204,7 @@
 	registerChangeHandler();
 		
 	var canReplaceOwnFiles = {{.ActiveUser.HasPermissionReplace}};
-	setUploadDefaults();
+	setUploadDefaults({{.DefaultDownloads}}, {{.DefaultExpiryDays}}, {{.DefaultPassword}});
 	
 {{ if .ShowDeprecationNotice }}
 	showDeprecationNotice();

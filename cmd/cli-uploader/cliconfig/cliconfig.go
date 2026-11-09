@@ -75,7 +75,7 @@ func CreateLogin() {
 	}
 	fmt.Print("OK\nDownloading configuration...")
 
-	_, _, isE2E, err := cliapi.GetConfig()
+	serverConfig, err := cliapi.GetConfig()
 	if err != nil {
 		fmt.Println("FAIL")
 		if errors.Is(err, cliapi.ErrUnauthorised) {
@@ -87,7 +87,7 @@ func CreateLogin() {
 	}
 	fmt.Println("OK")
 	var e2ekey []byte
-	if isE2E {
+	if serverConfig.EndToEndEncryptionEnabled {
 		fmt.Print("End-to-end encryption key: ")
 		e2ekeyString := helper.ReadLine()
 		e2ekey, err = base64.StdEncoding.DecodeString(e2ekeyString)

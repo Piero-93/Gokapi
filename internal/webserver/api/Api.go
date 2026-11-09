@@ -565,13 +565,24 @@ func apiConfigInfo(w http.ResponseWriter, _ requestParser, _ models.User, _ mode
 		MaxFilesize               int
 		MaxChunksize              int
 		EndToEndEncryptionEnabled bool
+		// Only reported if set by the administrator, so that clients can keep their previous behaviour otherwise
+		DefaultDownloads  *int `json:",omitempty"`
+		DefaultExpiryDays *int `json:",omitempty"`
 	}
 	config := configuration.Get()
-	result, err := json.Marshal(configInfo{
+	env := configuration.GetEnvironment()
+	info := configInfo{
 		MaxFilesize:               config.MaxFileSizeMB,
 		MaxChunksize:              config.ChunkSize,
 		EndToEndEncryptionEnabled: config.Encryption.Level == encryption.EndToEndEncryption,
-	})
+	}
+	if env.IsDefaultDownloadsSet {
+		info.DefaultDownloads = &env.DefaultDownloads
+	}
+	if env.IsDefaultExpirySet {
+		info.DefaultExpiryDays = &env.DefaultExpiryDays
+	}
+	result, err := json.Marshal(info)
 	helper.Check(err)
 	_, _ = w.Write(result)
 }

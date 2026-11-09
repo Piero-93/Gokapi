@@ -487,7 +487,7 @@
           {
             "name": "allowedDownloads",
             "in": "header",
-            "description": "How many downloads are allowed. Default of 1 will be used if empty. Unlimited if 0 is passed.",
+            "description": "How many downloads are allowed. Server default (1, or the value of GOKAPI_DEFAULT_DOWNLOADS) will be used if empty. Unlimited if 0 is passed.",
             "required": false,
             "schema": {
               "type": "integer"
@@ -496,7 +496,7 @@
           {
             "name": "expiryDays",
             "in": "header",
-            "description": "How many days the file will be stored. Default of 14 will be used if empty. Unlimited if 0 is passed.",
+            "description": "How many days the file will be stored. Server default (14, or the value of GOKAPI_DEFAULT_EXPIRY_DAYS) will be used if empty. Unlimited if 0 is passed.",
             "required": false,
             "schema": {
               "type": "integer"
@@ -2590,6 +2590,20 @@
           "MaxChunksize": {
             "type": "integer",
             "example": 40
+          },
+          "EndToEndEncryptionEnabled": {
+            "type": "boolean",
+            "example": false
+          },
+          "DefaultDownloads": {
+            "type": "integer",
+            "example": 5,
+            "description": "Default download limit for new uploads, 0 for unlimited. Only returned if set with GOKAPI_DEFAULT_DOWNLOADS"
+          },
+          "DefaultExpiryDays": {
+            "type": "integer",
+            "example": 7,
+            "description": "Default expiry in days for new uploads, 0 for no expiry. Only returned if set with GOKAPI_DEFAULT_EXPIRY_DAYS"
           }
         },
         "description": "ConfigInfo is the struct used for returning configuration data"
@@ -2623,11 +2637,11 @@
           },
           "allowedDownloads": {
             "type": "integer",
-            "description": "How many downloads are allowed. Default of 1 will be used if empty. Unlimited if 0 is passed."
+            "description": "How many downloads are allowed. Server default (1, or the value of GOKAPI_DEFAULT_DOWNLOADS) will be used if empty. Unlimited if 0 is passed."
           },
           "expiryDays": {
             "type": "integer",
-            "description": "How many days the file will be stored. Default of 14 will be used if empty. Unlimited if 0 is passed."
+            "description": "How many days the file will be stored. Server default (14, or the value of GOKAPI_DEFAULT_EXPIRY_DAYS) will be used if empty. Unlimited if 0 is passed."
           },
           "password": {
             "type": "string",

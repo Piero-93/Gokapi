@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/forceu/gokapi/internal/configuration"
 	"github.com/forceu/gokapi/internal/helper"
 	"github.com/forceu/gokapi/internal/models"
 	"github.com/forceu/gokapi/internal/storage"
@@ -698,20 +699,18 @@ func (p *paramChunkComplete) ProcessParameter(_ *http.Request) error {
 		}
 	}
 
+	if !p.foundHeaders["allowedDownloads"] {
+		p.AllowedDownloads = configuration.GetEnvironment().DefaultDownloads
+	}
 	if p.AllowedDownloads == 0 {
-		if p.foundHeaders["allowedDownloads"] {
-			p.UnlimitedDownloads = true
-		} else {
-			p.AllowedDownloads = 1
-		}
+		p.UnlimitedDownloads = true
 	}
 
+	if !p.foundHeaders["expiryDays"] {
+		p.ExpiryDays = configuration.GetEnvironment().DefaultExpiryDays
+	}
 	if p.ExpiryDays == 0 {
-		if p.foundHeaders["expiryDays"] {
-			p.UnlimitedTime = true
-		} else {
-			p.ExpiryDays = 14
-		}
+		p.UnlimitedTime = true
 	} else {
 		if p.ExpiryDays > 100000 {
 			p.UnlimitedTime = true

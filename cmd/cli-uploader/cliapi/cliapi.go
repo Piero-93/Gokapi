@@ -83,23 +83,28 @@ func GetVersion() (string, int, error) {
 	return parsedResult.Version, parsedResult.VersionInt, nil
 }
 
+// ServerConfig contains the upload configuration of the Gokapi server
+type ServerConfig struct {
+	MaxFilesize               int
+	MaxChunksize              int
+	EndToEndEncryptionEnabled bool
+	// Only set if the server administrator has configured a default
+	DefaultDownloads  *int
+	DefaultExpiryDays *int
+}
+
 // GetConfig returns the upload configuration of the Gokapi server
-func GetConfig() (int, int, bool, error) {
+func GetConfig() (ServerConfig, error) {
 	result, err := getUrl(gokapiUrl+"/info/config", []header{}, false)
 	if err != nil {
-		return 0, 0, false, err
+		return ServerConfig{}, err
 	}
-	type expectedFormat struct {
-		MaxFilesize               int
-		MaxChunksize              int
-		EndToEndEncryptionEnabled bool
-	}
-	var parsedResult expectedFormat
+	var parsedResult ServerConfig
 	err = json.Unmarshal([]byte(result), &parsedResult)
 	if err != nil {
-		return 0, 0, false, err
+		return ServerConfig{}, err
 	}
-	return parsedResult.MaxFilesize, parsedResult.MaxChunksize, parsedResult.EndToEndEncryptionEnabled, nil
+	return parsedResult, nil
 }
 
 func stripApiKeyOnRedirect(req *http.Request, via []*http.Request) error {
@@ -159,10 +164,13 @@ func UploadFile(uploadParams cliflags.FlagConfig) (models.FileApiOutput, error) 
 		os.Exit(4)
 	}
 	defer file.Close()
-	maxSize, chunkSize, isE2e, err := GetConfig()
+	serverConfig, err := GetConfig()
 	if err != nil {
 		return models.FileApiOutput{}, err
 	}
+	maxSize := serverConfig.MaxFilesize
+	chunkSize := serverConfig.MaxChunksize
+	isE2e := serverConfig.EndToEndEncryptionEnabled
 
 	if len(e2eKey) == 0 || !isE2e || uploadParams.DisableE2e {
 		isE2e = false
@@ -200,7 +208,7 @@ func UploadFile(uploadParams cliflags.FlagConfig) (models.FileApiOutput, error) 
 				return models.FileApiOutput{}, err
 			}
 		}
-		metaData, err := completeChunk(uuid, "Encrypted File", sizeBytes, realSize, true, uploadParams, progressBar)
+		metaData, err := completeChunk(uuid, "Encrypted File", sizeBytes, realSize, true, uploadParams, serverConfig, progressBar)
 		if err != nil {
 			return models.FileApiOutput{}, err
 		}
@@ -227,7 +235,7 @@ func UploadFile(uploadParams cliflags.FlagConfig) (models.FileApiOutput, error) 
 			return models.FileApiOutput{}, err
 		}
 	}
-	metaData, err := completeChunk(uuid, nameToBase64(file, uploadParams), sizeBytes, realSize, false, uploadParams, progressBar)
+	metaData, err := completeChunk(uuid, nameToBase64(file, uploadParams), sizeBytes, realSize, false, uploadParams, serverConfig, progressBar)
 	if err != nil {
 		return models.FileApiOutput{}, err
 	}
@@ -470,7 +478,7 @@ func uploadChunk(f io.Reader, uuid string, offset, chunkSize, filesize int64, pr
 	return nil
 }
 
-func completeChunk(uid, filename string, filesize, realsize int64, useE2e bool, uploadParams cliflags.FlagConfig, progressBar *progressbar.ProgressBar) (models.FileApiOutput, error) {
+func completeChunk(uid, filename string, filesize, realsize int64, useE2e bool, uploadParams cliflags.FlagConfig, serverConfig ServerConfig, progressBar *progressbar.ProgressBar) (models.FileApiOutput, error) {
 	type expectedFormat struct {
 		FileInfo models.FileApiOutput `json:"FileInfo"`
 	}
@@ -480,17 +488,24 @@ func completeChunk(uid, filename string, filesize, realsize int64, useE2e bool, 
 	if !uploadParams.JsonOutput {
 		fmt.Println("Finalising...")
 	}
-	result, err := getUrl(gokapiUrl+"/chunk/complete", []header{
+	headers := []header{
 		{"uuid", uid},
 		{"filename", filename},
 		{"filesize", strconv.FormatInt(filesize, 10)},
 		{"realsize", strconv.FormatInt(realsize, 10)},
 		{"isE2E", strconv.FormatBool(useE2e)},
-		{"allowedDownloads", strconv.Itoa(uploadParams.ExpiryDownloads)},
-		{"expiryDays", strconv.Itoa(uploadParams.ExpiryDays)},
 		{"password", uploadParams.Password},
 		{"contenttype", "application/octet-stream"},
-	}, true)
+	}
+	// If no value was passed and the server has a default, the value is left out so that the server default applies.
+	// Otherwise the passed value is sent, 0 (unlimited) if not passed
+	if uploadParams.IsExpiryDownloadsSet || serverConfig.DefaultDownloads == nil {
+		headers = append(headers, header{"allowedDownloads", strconv.Itoa(uploadParams.ExpiryDownloads)})
+	}
+	if uploadParams.IsExpiryDaysSet || serverConfig.DefaultExpiryDays == nil {
+		headers = append(headers, header{"expiryDays", strconv.Itoa(uploadParams.ExpiryDays)})
+	}
+	result, err := getUrl(gokapiUrl+"/chunk/complete", headers, true)
 	if err != nil {
 		return models.FileApiOutput{}, err
 	}

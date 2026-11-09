@@ -38,6 +38,21 @@ type Environment struct {
 	DisableDockerTrustedProxy bool `env:"DISABLE_DOCKER_TRUSTED_PROXY" envDefault:"false"`
 	// Sets the size of chunks that are uploaded in MB
 	ChunkSizeMB int `env:"CHUNK_SIZE_MB" envDefault:"45" onlyPositive:"true" persistent:"true"`
+	// Sets the default download limit for new uploads. Used by the upload page, if the browser
+	// has no saved value yet, and by the API, if no download limit is sent
+	// Set to 0 for unlimited downloads
+	DefaultDownloads int `env:"DEFAULT_DOWNLOADS" envDefault:"1" onlyPositive:"true"`
+	// Sets the default expiry in days for new uploads. Used by the upload page, if the browser
+	// has no saved value yet, and by the API, if no expiry is sent
+	// Set to 0 for no expiry
+	DefaultExpiryDays int `env:"DEFAULT_EXPIRY_DAYS" envDefault:"14" onlyPositive:"true"`
+	// Enables the password switch on the upload page by default, if set to true
+	// and the browser has no saved value yet
+	DefaultPasswordEnabled bool `env:"DEFAULT_PASSWORD" envDefault:"false"`
+	// True if GOKAPI_DEFAULT_DOWNLOADS has been set
+	IsDefaultDownloadsSet bool
+	// True if GOKAPI_DEFAULT_EXPIRY_DAYS has been set
+	IsDefaultExpirySet bool
 	// Sets the length of the download IDs
 	LengthId int `env:"LENGTH_ID" envDefault:"15" minValue:"5"`
 	// Sets the length of the hotlink IDs
@@ -124,6 +139,8 @@ func New() Environment {
 		osExit(1)
 	}
 	result = parseFlags(result)
+	_, result.IsDefaultDownloadsSet = os.LookupEnv("GOKAPI_DEFAULT_DOWNLOADS")
+	_, result.IsDefaultExpirySet = os.LookupEnv("GOKAPI_DEFAULT_EXPIRY_DAYS")
 	result.ActiveDeprecations = deprecation.GetActive()
 
 	return result

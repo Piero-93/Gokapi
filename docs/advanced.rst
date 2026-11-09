@@ -82,6 +82,22 @@ Available environment variables
 +-------------------------------------+----------------------------------------------------------------------------------------------------------+-----------------+-----------------------------+
 | GOKAPI_DATA_DIR                     | Sets the directory for the data                                                                          | Yes             | data                        |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------+-----------------+-----------------------------+
+| GOKAPI_DEFAULT_DOWNLOADS            | Sets the default download limit for new uploads. Used by the upload page, if the browser                 | No              | 1                           |
+|                                     |                                                                                                          |                 |                             |
+|                                     | has no saved value yet, and by the API, if no download limit is sent                                     |                 |                             |
+|                                     |                                                                                                          |                 |                             |
+|                                     | Set to 0 for unlimited downloads                                                                         |                 |                             |
++-------------------------------------+----------------------------------------------------------------------------------------------------------+-----------------+-----------------------------+
+| GOKAPI_DEFAULT_EXPIRY_DAYS          | Sets the default expiry in days for new uploads. Used by the upload page, if the browser                 | No              | 14                          |
+|                                     |                                                                                                          |                 |                             |
+|                                     | has no saved value yet, and by the API, if no expiry is sent                                             |                 |                             |
+|                                     |                                                                                                          |                 |                             |
+|                                     | Set to 0 for no expiry                                                                                   |                 |                             |
++-------------------------------------+----------------------------------------------------------------------------------------------------------+-----------------+-----------------------------+
+| GOKAPI_DEFAULT_PASSWORD             | Enables the password switch on the upload page by default, if set to true                                | No              | false                       |
+|                                     |                                                                                                          |                 |                             |
+|                                     | and the browser has no saved value yet                                                                   |                 |                             |
++-------------------------------------+----------------------------------------------------------------------------------------------------------+-----------------+-----------------------------+
 | GOKAPI_DISABLE_API_MENU             | Disables the API menu and generation of API keys for non-admin users                                     | No              | false                       |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------+-----------------+-----------------------------+
 | GOKAPI_DISABLE_CLOUDFLARE_DOWNLOAD  | Set this to true if you want to disable the automatic download of Cloudflare IP ranges and set the range | No              | false                       |
@@ -348,7 +364,7 @@ To upload a file, use the ``upload`` command with the ``-f`` flag:
 
    gokapi-cli upload -f /path/to/file
 
-By default, files are encrypted (if enabled) and have no expiration date. The following parameters are available to customize the upload:
+By default, files are encrypted (if enabled) and have no expiration date and no download limit. If the server sets ``GOKAPI_DEFAULT_EXPIRY_DAYS`` or ``GOKAPI_DEFAULT_DOWNLOADS``, these server defaults are used instead when the corresponding parameter is not passed. The following parameters are available to customize the upload:
 
 +------------------------------------+---------------------------------------------------+
 | Parameter                          | Description                                       |

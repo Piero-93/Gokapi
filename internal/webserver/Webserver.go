@@ -775,6 +775,7 @@ type AdminView struct {
 	EndToEndEncryption    bool
 	IncludeFilename       bool
 	IsInternalAuth        bool
+	DefaultPassword       bool
 	ShowApiMenu           bool
 	ShowDeprecationNotice bool
 	MaxFileSize           int
@@ -782,6 +783,8 @@ type AdminView struct {
 	ChunkSize             int
 	MaxParallelUploads    int
 	MinLengthPassword     int
+	DefaultDownloads      int
+	DefaultExpiryDays     int
 	FileRequestMaxFiles   int
 	FileRequestMaxSize    int
 	TotalFiles            int
@@ -925,6 +928,9 @@ func (u *AdminView) convertGlobalConfig(view int, user models.User) *AdminView {
 	u.MaxParallelUploads = config.MaxParallelUploads
 	u.ChunkSize = config.ChunkSize
 	u.IncludeFilename = config.IncludeFilename
+	u.DefaultDownloads = configuration.GetEnvironment().DefaultDownloads
+	u.DefaultExpiryDays = configuration.GetEnvironment().DefaultExpiryDays
+	u.DefaultPassword = configuration.GetEnvironment().DefaultPasswordEnabled
 	return u
 }
 

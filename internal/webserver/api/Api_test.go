@@ -1870,3 +1870,71 @@ func TestChunkCompleteSanitisationUnit(t *testing.T) {
 	test.IsEqualBool(t, strings.Contains(p.FileHeader.Filename, "\r"), false)
 	test.IsEqualBool(t, strings.Contains(p.FileHeader.Filename, "\n"), false)
 }
+
+func TestChunkCompleteUploadDefaults(t *testing.T) {
+	newParam := func(headers ...string) *paramChunkComplete {
+		p := &paramChunkComplete{FileSize: 10}
+		p.foundHeaders = map[string]bool{}
+		for _, header := range headers {
+			p.foundHeaders[header] = true
+		}
+		return p
+	}
+
+	p := newParam()
+	test.IsNil(t, p.ProcessParameter(nil))
+	test.IsEqualInt(t, p.AllowedDownloads, 1)
+	test.IsEqualInt(t, p.ExpiryDays, 14)
+	test.IsEqualBool(t, p.UnlimitedDownloads, false)
+	test.IsEqualBool(t, p.UnlimitedTime, false)
+
+	t.Cleanup(configuration.Load)
+	t.Setenv("GOKAPI_DEFAULT_DOWNLOADS", "5")
+	t.Setenv("GOKAPI_DEFAULT_EXPIRY_DAYS", "7")
+	configuration.Load()
+
+	p = newParam()
+	test.IsNil(t, p.ProcessParameter(nil))
+	test.IsEqualInt(t, p.AllowedDownloads, 5)
+	test.IsEqualInt(t, p.ExpiryDays, 7)
+
+	// Values that were sent are not replaced by the defaults
+	p = newParam("allowedDownloads", "expiryDays")
+	p.AllowedDownloads = 3
+	test.IsNil(t, p.ProcessParameter(nil))
+	test.IsEqualInt(t, p.AllowedDownloads, 3)
+	test.IsEqualBool(t, p.UnlimitedTime, true)
+
+	t.Setenv("GOKAPI_DEFAULT_DOWNLOADS", "0")
+	t.Setenv("GOKAPI_DEFAULT_EXPIRY_DAYS", "0")
+	configuration.Load()
+	p = newParam()
+	test.IsNil(t, p.ProcessParameter(nil))
+	test.IsEqualBool(t, p.UnlimitedDownloads, true)
+	test.IsEqualBool(t, p.UnlimitedTime, true)
+}
+
+func TestConfigInfoUploadDefaults(t *testing.T) {
+	getInfo := func() map[string]any {
+		w := httptest.NewRecorder()
+		apiConfigInfo(w, nil, models.User{}, models.ApiKey{})
+		var result map[string]any
+		err := json.Unmarshal(w.Body.Bytes(), &result)
+		test.IsNil(t, err)
+		return result
+	}
+
+	result := getInfo()
+	_, ok := result["DefaultDownloads"]
+	test.IsEqualBool(t, ok, false)
+	_, ok = result["DefaultExpiryDays"]
+	test.IsEqualBool(t, ok, false)
+
+	t.Cleanup(configuration.Load)
+	t.Setenv("GOKAPI_DEFAULT_EXPIRY_DAYS", "0")
+	configuration.Load()
+	result = getInfo()
+	_, ok = result["DefaultDownloads"]
+	test.IsEqualBool(t, ok, false)
+	test.IsEqualBool(t, result["DefaultExpiryDays"] == float64(0), true)
+}

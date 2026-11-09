@@ -136,12 +136,15 @@ function addFileProgress(file) {
 }
 
 
-function setUploadDefaults() {
-    let defaultDownloads = getLocalStorageWithDefault("defaultDownloads", 1);
-    let defaultExpiry = getLocalStorageWithDefault("defaultExpiry", 14);
+// Values saved in the browser take precedence over the server defaults.
+// A server default of 0 means unlimited
+function setUploadDefaults(serverDownloads, serverExpiry, serverPasswordEnabled) {
+    let defaultDownloads = getLocalStorageWithDefault("defaultDownloads", serverDownloads === 0 ? 1 : serverDownloads);
+    let defaultExpiry = getLocalStorageWithDefault("defaultExpiry", serverExpiry === 0 ? 14 : serverExpiry);
     let defaultPassword = getLocalStorageWithDefault("defaultPassword", "");
-    let defaultUnlimitedDownloads = getLocalStorageWithDefault("defaultUnlimitedDownloads", false) === "true";
-    let defaultUnlimitedTime = getLocalStorageWithDefault("defaultUnlimitedTime", false) === "true";
+    let defaultUnlimitedDownloads = getLocalStorageWithDefault("defaultUnlimitedDownloads", String(serverDownloads === 0)) === "true";
+    let defaultUnlimitedTime = getLocalStorageWithDefault("defaultUnlimitedTime", String(serverExpiry === 0)) === "true";
+    let passwordEnabled = defaultPassword !== "" || (localStorage.getItem("defaultPassword") === null && serverPasswordEnabled);
 
     document.getElementById("allowedDownloads").value = defaultDownloads;
     document.getElementById("expiryDays").value = defaultExpiry;
@@ -149,7 +152,7 @@ function setUploadDefaults() {
     document.getElementById("enableDownloadLimit").checked = !defaultUnlimitedDownloads;
     document.getElementById("enableTimeLimit").checked = !defaultUnlimitedTime;
 
-    if (defaultPassword === "") {
+    if (!passwordEnabled) {
         document.getElementById("enablePassword").checked = false;
         document.getElementById("password").disabled = true;
     } else {

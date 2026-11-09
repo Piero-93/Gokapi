@@ -73,6 +73,34 @@ func TestParseConfig(t *testing.T) {
 	test.IsEqualInt64(t, config.RealSize, 200)
 }
 
+func TestParseConfigUploadDefaults(t *testing.T) {
+	t.Cleanup(configuration.Load)
+	t.Setenv("GOKAPI_DEFAULT_DOWNLOADS", "5")
+	t.Setenv("GOKAPI_DEFAULT_EXPIRY_DAYS", "7")
+	configuration.Load()
+
+	data := testData{}
+	config, err := parseConfig(data)
+	test.IsNil(t, err)
+	test.IsEqualInt(t, config.AllowedDownloads, 5)
+	test.IsEqualInt(t, config.Expiry, 7)
+	test.IsEqualBool(t, config.UnlimitedDownload, false)
+	test.IsEqualBool(t, config.UnlimitedTime, false)
+
+	data.allowedDownloads = "2"
+	config, err = parseConfig(data)
+	test.IsNil(t, err)
+	test.IsEqualInt(t, config.AllowedDownloads, 2)
+
+	t.Setenv("GOKAPI_DEFAULT_DOWNLOADS", "0")
+	t.Setenv("GOKAPI_DEFAULT_EXPIRY_DAYS", "0")
+	configuration.Load()
+	config, err = parseConfig(testData{})
+	test.IsNil(t, err)
+	test.IsEqualBool(t, config.UnlimitedDownload, true)
+	test.IsEqualBool(t, config.UnlimitedTime, true)
+}
+
 func TestProcess(t *testing.T) {
 	w, r := test.GetRecorder("POST", "/upload", nil, nil, strings.NewReader("invalid§$%&%§"))
 	err := ProcessCompleteFile(w, r, 9, 20)
